@@ -11,13 +11,25 @@ memories.
 
 ## Install
 
-From this repository:
+From npm:
+
+```bash
+pi install pi-memory-dreaming
+```
+
+Or try it for one pi run without installing:
+
+```bash
+pi -e pi-memory-dreaming
+```
+
+For local development from this repository:
 
 ```bash
 pi install /absolute/path/to/pi-memory-dreaming
 ```
 
-Or try it for one pi run without installing:
+Or run the local checkout once without installing:
 
 ```bash
 pi -e /absolute/path/to/pi-memory-dreaming
