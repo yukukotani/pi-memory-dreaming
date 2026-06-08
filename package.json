@@ -1,12 +1,25 @@
 {
   "name": "pi-memory-dreaming",
-  "module": "index.ts",
+  "version": "0.1.0",
+  "description": "A pi package that adds durable conversation memory synthesis via the pi-dreaming extension.",
   "type": "module",
-  "private": true,
+  "keywords": ["pi-package", "pi-extension", "memory", "dreaming"],
+  "files": ["extensions", "README.md"],
+  "pi": {
+    "extensions": ["./extensions/pi-dreaming/index.ts"]
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "pack:dry-run": "bun pm pack --dry-run"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@earendil-works/pi-ai": "0.78.1",
+    "@earendil-works/pi-coding-agent": "0.78.1",
+    "@types/bun": "latest",
+    "typescript": "^5"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
   }
 }
