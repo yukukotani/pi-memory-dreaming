@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "A pi package that adds durable conversation memory synthesis via the pi-dreaming extension.",
   "type": "module",
+  "packageManager": "bun@1.3.14",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yukukotani/pi-memory-dreaming.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "keywords": ["pi-package", "pi-extension", "memory", "dreaming"],
   "files": ["extensions", "README.md"],
   "pi": {

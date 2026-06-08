@@ -1,0 +1,72 @@
+name: Create Release PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: Version bump type
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Bump version
+        id: version
+        env:
+          VERSION_TYPE: ${{ github.event.inputs.version_type }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile, writeFile } from 'node:fs/promises';
+
+          const versionType = process.env.VERSION_TYPE;
+          const packageJsonPath = 'package.json';
+          const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
+          const [major, minor, patch] = packageJson.version.split('.').map(Number);
+
+          if (![major, minor, patch].every(Number.isInteger)) {
+            throw new Error(`Unsupported version format: ${packageJson.version}`);
+          }
+
+          const nextVersion = {
+            major: `${major + 1}.0.0`,
+            minor: `${major}.${minor + 1}.0`,
+            patch: `${major}.${minor}.${patch + 1}`,
+          }[versionType];
+
+          if (!nextVersion) {
+            throw new Error(`Unsupported version type: ${versionType}`);
+          }
+
+          packageJson.version = nextVersion;
+          await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+          NODE
+
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Create release PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: release/v${{ steps.version.outputs.version }}
+          title: 'chore: release v${{ steps.version.outputs.version }}'
+          commit-message: 'chore: release v${{ steps.version.outputs.version }}'
+          body: |
+            Release v${{ steps.version.outputs.version }}.
+
+            Merge this PR to publish pi-memory-dreaming with npm trusted publishing.
+
