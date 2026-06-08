@@ -1,6 +1,6 @@
 {
   "name": "pi-memory-dreaming",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A pi package that adds durable conversation memory synthesis via the pi-dreaming extension.",
   "type": "module",
   "packageManager": "bun@1.3.14",
@@ -11,10 +11,20 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
-  "keywords": ["pi-package", "pi-extension", "memory", "dreaming"],
-  "files": ["extensions", "README.md"],
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "memory",
+    "dreaming"
+  ],
+  "files": [
+    "extensions",
+    "README.md"
+  ],
   "pi": {
-    "extensions": ["./extensions/pi-dreaming/index.ts"]
+    "extensions": [
+      "./extensions/pi-dreaming/index.ts"
+    ]
   },
   "scripts": {
     "check": "tsc --noEmit",
