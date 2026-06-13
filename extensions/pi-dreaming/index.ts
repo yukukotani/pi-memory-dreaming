@@ -3,7 +3,7 @@ import { registerDreamingCommand } from "./commands.js";
 import { runDreaming } from "./dreamer.js";
 import { buildRecallSystemPrompt } from "./prompts.js";
 import { buildSessionDigest, isStaleCtxError } from "./session.js";
-import { getActiveMemories, loadDreamingStore, saveDreamingStore } from "./store.js";
+import { listActiveMemories, loadDreamingMemoryStore, saveDreamingMemoryStore } from "./store.js";
 
 export default function (pi: ExtensionAPI): void {
 	registerDreamingCommand(pi);
@@ -35,12 +35,12 @@ function registerDreamingLifecycle(pi: ExtensionAPI): void {
 	}
 
 	function startTimer(ctx: ExtensionContext): void {
-		const store = loadDreamingStore(ctx.cwd);
+		const store = loadDreamingMemoryStore(ctx.cwd);
 		interval = setInterval(() => {
 			const currentCtx = ctxRef;
 			if (!currentCtx) return;
 			void attemptDream(currentCtx, "timer");
-		}, store.settings.intervalMs);
+		}, store.state.settings.intervalMs);
 		interval.unref?.();
 	}
 
@@ -48,15 +48,15 @@ function registerDreamingLifecycle(pi: ExtensionAPI): void {
 		if (running) return;
 		const currentGeneration = generation;
 		try {
-			const store = loadDreamingStore(ctx.cwd);
-			const digest = buildSessionDigest(ctx, store.settings.maxDigestChars);
+			const store = loadDreamingMemoryStore(ctx.cwd);
+			const digest = buildSessionDigest(ctx, store.state.settings.maxDigestChars);
 			if (reason === "timer" && lastObservedSignature === digest.signature) return;
 			running = true;
 			const result = await runDreaming(ctx, { reason });
 			if (currentGeneration !== generation || !ctxRef) return;
 			if (reason === "timer" && result.status !== "failed") lastObservedSignature = digest.signature;
-			if (ctx.hasUI && result.status === "completed" && (result.saved > 0 || result.candidates > 0 || result.archived > 0)) {
-				ctx.ui.notify(`pi-dreaming: ${result.message} saved=${result.saved} candidates=${result.candidates}`, "info");
+			if (ctx.hasUI && result.status === "completed" && (result.saved > 0 || result.deleted > 0 || result.dropped > 0)) {
+				ctx.ui.notify(`pi-dreaming: ${result.message} saved=${result.saved} deleted=${result.deleted} dropped=${result.dropped}`, "info");
 			}
 		} catch (error) {
 			if (!isStaleCtxError(error)) console.warn(`[pi-dreaming] ${String(error)}`);
@@ -70,14 +70,14 @@ function registerDreamingLifecycle(pi: ExtensionAPI): void {
 	});
 
 	pi.on("before_agent_start", async (event, ctx) => {
-		const store = loadDreamingStore(ctx.cwd);
-		if (!store.settings.enabled) return;
-		const active = getActiveMemories(store);
-		const recall = buildRecallSystemPrompt(active, store.settings.maxActiveMemoriesInPrompt);
+		const store = loadDreamingMemoryStore(ctx.cwd);
+		if (!store.state.settings.enabled) return;
+		const active = listActiveMemories(store);
+		const recall = buildRecallSystemPrompt(active, store.state.settings.maxActiveMemoriesInPrompt);
 		if (!recall) return;
 		const now = new Date().toISOString();
-		for (const memory of active.slice(0, store.settings.maxActiveMemoriesInPrompt)) memory.lastUsedAt = now;
-		saveDreamingStore(ctx.cwd, store);
+		for (const memory of active.slice(0, store.state.settings.maxActiveMemoriesInPrompt)) memory.lastUsedAt = now;
+		saveDreamingMemoryStore(ctx.cwd, store);
 		return { systemPrompt: `${event.systemPrompt}\n\n${recall}` };
 	});
 

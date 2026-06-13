@@ -1,10 +1,10 @@
-export const DREAMING_STORE_VERSION = 1;
+export const DREAMING_STATE_VERSION = 2;
 export const DEFAULT_DREAMING_INTERVAL_MS = 5 * 60 * 1000;
 
 export type MemoryKind = "preference" | "fact" | "workflow" | "correction" | "project";
-export type MemoryStatus = "active" | "candidate" | "archived";
 export type MemorySensitivity = "normal" | "sensitive" | "forbidden";
 export type DreamingRunReason = "timer" | "agent_end" | "manual" | "startup";
+export type DreamingMaintenanceAction = "upsert" | "delete" | "ignore";
 
 export interface SourceDigest {
 	/** Session file path when available, otherwise a memory:<session-id> fallback. */
@@ -20,13 +20,16 @@ export interface SourceDigest {
 }
 
 export interface DreamingMemory {
-	id: string;
+	/** Stable filename/wiki-link identity, without `.md`. */
+	slug: string;
+	/** Human-readable title shown by `/dreaming list` and `_index.md`. */
+	name: string;
+	/** One-line summary for listings and prompt context. */
+	description: string;
 	kind: MemoryKind;
-	content: string;
-	status: MemoryStatus;
+	body: string;
 	confidence: number;
 	sensitivity: MemorySensitivity;
-	rationale?: string;
 	tags: string[];
 	createdAt: string;
 	updatedAt: string;
@@ -42,7 +45,6 @@ export interface DreamingSettings {
 	maxDigestChars: number;
 	maxActiveMemoriesInPrompt: number;
 	autoSaveMinConfidence: number;
-	candidateMaxAgeDays: number;
 }
 
 export interface DreamingLastRun {
@@ -54,29 +56,33 @@ export interface DreamingLastRun {
 	message?: string;
 }
 
-export interface DreamingStore {
-	version: typeof DREAMING_STORE_VERSION;
+export interface DreamingState {
+	version: typeof DREAMING_STATE_VERSION;
 	settings: DreamingSettings;
-	memories: DreamingMemory[];
 	lastRun?: DreamingLastRun;
 }
 
-export type SynthesisAction = "upsert" | "archive" | "ignore";
+export interface DreamingMemoryStore {
+	state: DreamingState;
+	memories: DreamingMemory[];
+}
 
-export interface DreamingSynthesisCandidate {
-	action: SynthesisAction;
-	id?: string;
+export interface DreamingMaintenanceOperation {
+	action: DreamingMaintenanceAction;
+	slug?: string;
 	kind?: MemoryKind;
-	content?: string;
+	name?: string;
+	description?: string;
+	body?: string;
 	confidence?: number;
 	sensitivity?: MemorySensitivity;
 	tags?: string[];
 	rationale?: string;
-	archiveReason?: string;
+	deleteReason?: string;
 }
 
-export interface DreamingSynthesisResult {
-	memories: DreamingSynthesisCandidate[];
+export interface DreamingMaintenanceResult {
+	memories: DreamingMaintenanceOperation[];
 }
 
 export interface DreamingRunOptions {
@@ -90,7 +96,7 @@ export interface DreamingRunResult {
 	reason: DreamingRunReason;
 	signature?: string;
 	saved: number;
-	candidates: number;
-	archived: number;
+	deleted: number;
+	dropped: number;
 	message: string;
 }
